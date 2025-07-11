@@ -1,0 +1,23 @@
+{
+  "name": "shreexpress",
+  "version": "1.0.0",
+  "description": "this our tybca project by hit & crens courier serice bussiness website",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": [
+    "ShreeXpress",
+    "courier",
+    "ShreeXpress"
+  ],
+  "author": "Heet Dhameliya, Balar Crens",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "pg": "^8.16.3"
+  }
+}
