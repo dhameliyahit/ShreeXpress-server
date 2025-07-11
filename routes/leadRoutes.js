@@ -13,7 +13,7 @@ router.post('/pickup', async (req, res) => {
     RETURNING *;
 `, [full_name, phone_number, pincode, goods_type, approx_weight, address, nearest_branch]);
 
-        console.log(result.rows[0]); // ✅ shows inserted row
+         // ✅ shows inserted row
 
         res.status(201).json({ message: 'Pickup request created successfully' });
     } catch (error) {
@@ -21,7 +21,17 @@ router.post('/pickup', async (req, res) => {
         res.status(500).json({ error: 'Failed to create pickup request' });
     }
 });
-
+//get all  pickup requests
+router.get("/pickup",async (req,res)=>{
+    try {
+        const result = await pool.query('SELECT * FROM pickup_requests ORDER BY created_at DESC;');
+        console.log('Fetched pickup requests:', result.rows);
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error('Error fetching pickup requests:', error);
+        res.status(500).json({ error: 'Failed to fetch pickup requests' });
+    }
+})
 
 //contact us
 
