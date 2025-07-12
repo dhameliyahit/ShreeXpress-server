@@ -31,7 +31,7 @@ router.get("/pickup",async (req,res)=>{
         console.error('Error fetching pickup requests:', error);
         res.status(500).json({ error: 'Failed to fetch pickup requests' });
     }
-})
+});
 
 //contact us
 

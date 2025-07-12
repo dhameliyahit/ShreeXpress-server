@@ -33,9 +33,9 @@ app.use("/api/v1/lead", require("./routes/leadRoutes"));
 
 app.get('/', (req, res) => {
     //  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-    res.send("<h1>ShreeXpress Courier API</h1>")
+    res.send("<h1>ShreeXpress Courier API</h1>");
 });
 
 app.listen(PORT || 3000, () => {
-    console.log(`Server is Running On : ${PORT}`)
+    console.log(`Server is Running On : ${PORT}`);
 });
