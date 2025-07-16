@@ -2,6 +2,10 @@
 const { Pool } = require("pg");
 require("dotenv").config();
 
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+
+
 const isProduction = process.env.NODE_ENV === 'production';
 
 const pool = new Pool({
