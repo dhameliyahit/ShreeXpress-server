@@ -65,7 +65,6 @@ app.get("/api/all", async (req, res) => {
                 message: "Table is Empty"
             })
         }
-        console.log(users)
         res.status(200).json(users.rows);
 
     } catch (error) {
