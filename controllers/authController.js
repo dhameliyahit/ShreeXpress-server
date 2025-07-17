@@ -2,65 +2,28 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const pool = require('../DB/connectdb');
 const { validationResult } = require('express-validator');
-const { admin } = require('../middleware/authMiddleware');
 
-const newAdminController = async (req, res) => {
-  try {
-    // Validate input
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { name, email, password, role } = req.body;
-
-    const query = `
-      INSERT INTO users (name, email, password, role)
-      VALUES ($1, $2, $3, $4)
-      RETURNING *
-    `;
-
-    const result = await pool.query(query, [name, email, password, role]);
-
-    if (result.rowCount === 0) {
-      return res.status(202).json({
-        message: "New Admin Creation Failed"
-      });
-    }
-
-    res.status(200).json({
-      message: "New Admin Created",
-      user: result.rows[0],
-    });
-
-  } catch (error) {
-    console.error("Error while creating new admin:", error.message);
-    res.status(500).json({
-      message: "Internal Server Error"
-    });
-  }
-};
-
-
+const salt = 10;
 
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log(email,password)
+    console.log(email, password)
     // 1. Check if user exists
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
 
     if (result.rows.length === 0) {
-      return res.status(400).json({message : `credentials Not Found`});
+      return res.status(400).json({ message: `credentials Not Found` });
     }
 
     const user = result.rows[0];
 
+
     // 2. Check if password is valid
-    // const validPassword = await bcrypt.compare(password, user.password);
-    // if (!validPassword) {
-    //   return res.status(400).json({ error: 'Invalid credentials' });
-    // }
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(400).json({ error: 'Invalid Password' });
+    }
 
     // 3. Generate token
     const token = jwt.sign(
@@ -85,18 +48,60 @@ const login = async (req, res) => {
   }
 };
 
+const newAdminController = async (req, res) => {
+  try {
+    // Validate input
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { name, email, password, role } = req.body;
+
+    const hashedPassword = await bcrypt.hash(password, salt)
+
+    const query = `
+      INSERT INTO users (name, email, password, role)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+    `;
+
+    const result = await pool.query(query, [name, email, hashedPassword, role]);
+
+    if (result.rowCount === 0) {
+      return res.status(202).json({
+        message: "New Admin Creation Failed"
+      });
+    }
+
+    res.status(200).json({
+      message: "New Admin Created",
+      user: result.rows[0],
+    });
+
+  } catch (error) {
+    console.error("Error while creating new admin:", error.message);
+    res.status(500).json({
+      message: "Internal Server Error"
+    });
+  }
+};
+
 
 const newClientController = async (req, res) => {
   try {
     const { name, email, password, role = "client" } = req.body;
     const createdBy = req.user.id;
+
+    const hashedPassword = await bcrypt.hash(password, salt)
+
     const query = `
       INSERT INTO users (name, email, password,role,created_by)
       VALUES ($1, $2, $3, $4,$5)
       RETURNING *
     `;
 
-    const result = await pool.query(query, [name, email, password, role, createdBy]);
+    const result = await pool.query(query, [name, email, hashedPassword, role, createdBy]);
 
     if (result.rowCount === 0) {
       return res.status(202).json({
@@ -117,7 +122,6 @@ const newClientController = async (req, res) => {
     })
   }
 };
-//select * from users where role='client'AND create_by = * admin id
 
 
 const getAllAdminController = async (req, res) => {
@@ -175,4 +179,32 @@ const getAllClientController = async (req, res) => {
   }
 }
 
-module.exports = { login, newAdminController, newClientController, getAllAdminController, getAllClientController };
+const getNewSuperAdminController = async (req, res) => {
+  try {
+    const { name, email, password, role = 'superadmin' } = req.body;
+
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const query = `INSERT INTO users (name,email,password,role) VALUES ($1,$2,$3,$4)`
+
+    const superadmin = await pool.query(query, [name, email, hashedPassword, role]);
+
+    res.status(200).json({
+      message: "Superadmin Created successfully",
+      superadmin: superadmin.rows[0]
+    })
+
+  } catch (error) {
+    console.log("error" + error.message)
+    res.status(200).json({ message: "error while crete super admin" + error.message })
+  }
+}
+
+module.exports = {
+  login,
+  newAdminController,
+  newClientController,
+  getAllAdminController,
+  getAllClientController,
+  getNewSuperAdminController
+};
