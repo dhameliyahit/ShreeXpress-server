@@ -36,8 +36,6 @@ router.get("/all/admin", protect, superadmin, getAllAdminController)
 //admin got all client what creby him
 router.get("/all/client", protect, admin, getAllClientController)
 
-//update-delete pachhi
-
 router.post("/new/superadmin", getNewSuperAdminController)
 
 module.exports = router;
