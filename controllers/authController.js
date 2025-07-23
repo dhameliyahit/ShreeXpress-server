@@ -58,7 +58,20 @@ const newAdminController = async (req, res) => {
 
     const { name, email, password, role } = req.body;
 
+
+
+    const isAlreadyHave = await pool.query("SELECT email FROM users WHERE email = $1", [email]);
+
+    if (isAlreadyHave.rowCount !== 0) {
+      return res.status(203).json({
+        message: "User already exists"
+      });
+    }
+
+
+
     const hashedPassword = await bcrypt.hash(password, salt)
+
 
     const query = `
       INSERT INTO users (name, email, password, role)
@@ -81,8 +94,11 @@ const newAdminController = async (req, res) => {
 
   } catch (error) {
     console.error("Error while creating new admin:", error.message);
+
     res.status(500).json({
-      message: "Internal Server Error"
+      message: "Internal Server Error",
+
+
     });
   }
 };

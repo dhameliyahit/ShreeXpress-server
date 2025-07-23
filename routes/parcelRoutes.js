@@ -8,8 +8,8 @@ const {
 } = require('../controllers/parcelController');
 const { protect } = require('../middleware/authMiddleware');
 
-router.post('/', protect, createParcel);
-router.get('/', protect, getAllParcels);
+router.post('/new/courier', protect, createParcel);
+router.get('/all/courier', protect, getAllParcels);
 router.get('/track/:trackingNumber', getParcelByTrackingNumber);
 router.put('/:id/status', protect, updateParcelStatus);
 

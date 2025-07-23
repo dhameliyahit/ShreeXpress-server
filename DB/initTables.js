@@ -56,14 +56,15 @@ const users = async () => {
 // 4️⃣ Branches Table
 const branches = async () => {
   const query = `
-    CREATE TABLE IF NOT EXISTS branches (
-      id SERIAL PRIMARY KEY,
-      branch_name VARCHAR(100),
-      address TEXT,
-      phone VARCHAR(15),
-      created_by INTEGER REFERENCES users(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+  CREATE TABLE IF NOT EXISTS branches (
+    id SERIAL PRIMARY KEY,
+    branch_name VARCHAR(100),
+    address TEXT,
+    phone VARCHAR(15),
+    pincode VARCHAR(15),
+    created_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
   `;
   await pool.query(query);
   console.log('✅ branches table created');
@@ -73,16 +74,39 @@ const branches = async () => {
 const parcels = async () => {
   const query = `
     CREATE TABLE IF NOT EXISTS parcels (
-      id SERIAL PRIMARY KEY,
-      tracking_number VARCHAR(50) UNIQUE,
-      sender_name VARCHAR(100),
-      receiver_name VARCHAR(100),
-      from_branch INTEGER REFERENCES branches(id),
-      to_branch INTEGER REFERENCES branches(id),
-      current_status VARCHAR(50) DEFAULT 'created',
-      created_by INTEGER REFERENCES users(id),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+  id SERIAL PRIMARY KEY,
+
+  tracking_number VARCHAR(50) UNIQUE NOT NULL,
+
+  sender_name VARCHAR(100) NOT NULL,
+  sender_phone VARCHAR(20) NOT NULL,
+  sender_address TEXT NOT NULL,
+
+  receiver_name VARCHAR(100) NOT NULL,
+  receiver_phone VARCHAR(20) NOT NULL,
+  receiver_address TEXT NOT NULL,
+
+  from_branch INTEGER NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
+  to_branch INTEGER NOT NULL REFERENCES branches(id) ON DELETE CASCADE,
+
+  weight DECIMAL(10, 2) NOT NULL,
+  dimensions VARCHAR(50),
+  package_type VARCHAR(50),
+
+  current_status VARCHAR(50) NOT NULL DEFAULT 'created',
+
+  created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  estimated_delivery DATE,
+  delivery_notes TEXT,
+
+  shipping_cost DECIMAL(10,2),
+  payment_method VARCHAR(50),
+  payment_status VARCHAR(20) DEFAULT 'pending'
+);
+
   `;
   await pool.query(query);
   console.log('✅ parcels table created');
@@ -93,9 +117,11 @@ const parcel_status_history = async () => {
   const query = `
     CREATE TABLE IF NOT EXISTS parcel_status_history (
       id SERIAL PRIMARY KEY,
-      parcel_id INTEGER REFERENCES parcels(id),
-      status VARCHAR(50),
-      updated_by INTEGER REFERENCES users(id),
+      parcel_id INTEGER REFERENCES parcels(id) NOT NULL,
+      status VARCHAR(50) NOT NULL,
+      location_branch INTEGER REFERENCES branches(id),
+      notes TEXT,
+      updated_by INTEGER REFERENCES users(id) NOT NULL,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `;

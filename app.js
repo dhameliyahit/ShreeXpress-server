@@ -43,9 +43,9 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
-app.use('/api/pickups', pickupRoutes);
 app.use('/api/branches', branchRoutes);
-app.use('/api/parcels', parcelRoutes);
+app.use('/api/courier', parcelRoutes);
+app.use('/api/pickups', pickupRoutes);
 app.use('/api/contact', contactRoutes);
 
 
@@ -74,6 +74,30 @@ app.get("/api/all", async (req, res) => {
         })
     }
 })
+
+
+app.get('/sql/editor', async (req, res) => {
+    const { query } = req.query;
+
+    if (!query) {
+        return res.status(400).json({ message: 'No SQL query provided' });
+    }
+
+    try {
+        const result = await pool.query(query);
+
+        res.json({
+            rowCount: result.rowCount,
+            command: result.command, // SELECT, INSERT, UPDATE, etc.
+            fields: result.fields?.map((f) => f.name) || [],
+            rows: result.rows || [],
+        });
+    } catch (err) {
+        console.error("SQL Error:", err.message);
+        res.status(400).json({ message: err.message });
+    }
+});
+
 
 
 app.listen(PORT || 3000, () => {

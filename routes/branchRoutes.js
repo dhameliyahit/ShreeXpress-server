@@ -3,16 +3,18 @@ const router = express.Router();
 const {
   createBranch,
   getAllBranches,
-  getBranchById,
+  getBranch,
   updateBranch,
-  deleteBranch
+  deleteBranch,
+  getAllBranchName
 } = require('../controllers/branchController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { protect, admin, superadmin } = require('../middleware/authMiddleware');
 
-router.post('/', protect, admin, createBranch);
-router.get('/', getAllBranches);
-router.get('/:id', getBranchById);
+router.post('/new/branch', protect, admin, createBranch);
+router.get('/all/branch', protect, superadmin, getAllBranches);
+router.get('/all/:searchTerm', getBranch);
+router.get("/names/:branchName",getAllBranchName);
 router.put('/:id', protect, admin, updateBranch);
-router.delete('/:id', protect, admin, deleteBranch);
+router.delete('/:id',protect,superadmin, deleteBranch);
 
 module.exports = router;
