@@ -129,6 +129,37 @@ const parcel_status_history = async () => {
   console.log('✅ parcel_status_history table created');
 };
 
+const otp_logs = async () => {
+  const query = `
+    CREATE TABLE IF NOT EXISTS otp_logs (
+    id SERIAL PRIMARY KEY,
+    from_email VARCHAR(100) NOT NULL,
+    to_email VARCHAR(100) NOT NULL,
+    otp VARCHAR(10),
+    status VARCHAR(20) CHECK (status IN ('sent', 'verified', 'expired', 'failed')) DEFAULT 'sent',
+    ip_address VARCHAR(50),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    verified_at TIMESTAMP
+);
+  `
+  await pool.query(query);
+  console.log('✅ OTP_log table created');
+}
+
+const blocked_emails = async () => {
+  const query = ` 
+      CREATE TABLE IF NOT EXISTS blocked_emails (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(100) UNIQUE,
+    reason TEXT,
+    blocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+  `
+  await pool.query(query);
+  console.log('✅ blocked_emails table created');
+}
+
 // 7️⃣ Export All Functions
 module.exports = {
   RequestOfPicupTable,
@@ -137,4 +168,6 @@ module.exports = {
   branches,
   parcels,
   parcel_status_history,
+  otp_logs,
+  blocked_emails
 };

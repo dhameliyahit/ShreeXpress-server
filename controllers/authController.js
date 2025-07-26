@@ -2,13 +2,24 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const pool = require('../DB/connectdb');
 const { validationResult } = require('express-validator');
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.SMTP_EMAIL || 'heetdhameliya59@gmail.com',
+    pass: process.env.SMTP_PASS || 'gvsaggsbhbsouwql',
+  },
+});
+
 
 const salt = 10;
 
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log(email, password)
     // 1. Check if user exists
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
 
@@ -60,15 +71,24 @@ const newAdminController = async (req, res) => {
 
 
 
-    const isAlreadyHave = await pool.query("SELECT email FROM users WHERE email = $1", [email]);
+    const isAlreadyHave = await pool.query('SELECT email, role FROM users WHERE email = $1', [email]);
 
-    if (isAlreadyHave.rowCount !== 0) {
-      return res.status(203).json({
-        message: "User already exists"
-      });
+    if (isAlreadyHave.rows.length > 0) {
+      if (isAlreadyHave.rows[0].role === 'admin') {
+        return res.status(400).json({
+          message: "This email already exists as an admin"
+        });
+      } else if (isAlreadyHave.rows[0].role === 'superadmin') {
+        return res.status(400).json({
+          message: "This email already exists as a superadmin"
+        });
+      } else {
+        // email exists, but not an admin
+        return res.status(400).json({
+          message: "This email already exists as a client"
+        });
+      }
     }
-
-
 
     const hashedPassword = await bcrypt.hash(password, salt)
 
@@ -153,7 +173,7 @@ const getAllAdminController = async (req, res) => {
 
     res.status(200).json({
       message: "All Admin's Got By Super Admin",
-      totalAdmin: admins.rowCount,
+      totalAdmin: admins.admins,
       admins: admins.rows,
     })
 
@@ -216,11 +236,195 @@ const getNewSuperAdminController = async (req, res) => {
   }
 }
 
+
+const getAllUsersController = async (req, res) => {
+  try {
+    const { role } = req.query;
+
+    // Only allow these roles
+    const validRoles = ['client', 'admin', 'superadmin'];
+
+    let query = 'SELECT id, name, email, role, created_at FROM users';
+    let values = [];
+
+    if (role && validRoles.includes(role)) {
+      query += ' WHERE role = $1';
+      values.push(role);
+    }
+
+    const result = await pool.query(query, values);
+    res.json({ success: true, users: result.rows });
+
+  } catch (error) {
+    console.error("Error fetching users:", error.message);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+}
+
+const otpMap = new Map(); // In-memory store (email → otp)
+
+
+
+
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const from_email = process.env.SMTP_EMAIL || 'heetdhameliya59@gmail.com';
+
+  try {
+    // 1. Check if user exists
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // 2. Check if recipient is blocked
+    const blocked = await pool.query(`SELECT * FROM blocked_emails WHERE email = $1`, [email]);
+    if (blocked.rows.length > 0) {
+      return res.status(403).json({ message: 'This email is blocked from receiving OTPs.' });
+    }
+
+    // 3. Store OTP in-memory (temp)
+    otpMap.set(email, { otp, expiresAt: Date.now() + 10 * 60 * 1000 }); // 10 mins
+
+    // 4. Send OTP Email
+    await transporter.sendMail({
+      from: from_email,
+      to: email,
+      subject: "🔐 OTP for Password Reset - ShreeXpress",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; color: #333;">
+          <div style="max-width: 600px; margin: auto; background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <img src="https://shreexpresscourier.netlify.app/assets/ShreeXpressLogo.png" alt="ShreeXpress Logo" style="max-width: 150px;" />
+            </div>
+            <h2 style="text-align: center; color: #4A90E2;">🔐 Password Reset OTP</h2>
+            <p>Hello,</p>
+            <p>Use the OTP below to reset your password:</p>
+            <div style="text-align: center; margin: 20px 0;">
+              <span style="display: inline-block; background: #4A90E2; color: white; font-size: 24px; padding: 12px 30px; border-radius: 6px;">
+                ${otp}
+              </span>
+            </div>
+            <p style="color: #777;">This OTP is valid for 10 minutes. Do not share it.</p>
+            <p style="text-align: center; font-size: 13px; color: #888;">&copy; ${new Date().getFullYear()} ShreeXpress Courier</p>
+          </div>
+        </div>
+      `
+    });
+
+    // 5. Log OTP send event
+    await pool.query(
+      `INSERT INTO otp_logs (from_email, to_email, otp, status, ip_address, user_agent)
+       VALUES ($1, $2, $3, 'sent', $4, $5)`,
+      [
+        from_email,
+        email,
+        otp,
+        req.ip,
+        req.headers['user-agent'] || ''
+      ]
+    );
+
+    res.json({ success: true, message: `OTP sent to ${email}` });
+
+  } catch (err) {
+    console.error("Forgot password error:", err);
+
+    // Log failed OTP event
+    await pool.query(
+      `INSERT INTO otp_logs (from_email, to_email, otp, status, ip_address, user_agent)
+       VALUES ($1, $2, $3, 'failed', $4, $5)`,
+      [
+        from_email,
+        email,
+        otp,
+        req.ip,
+        req.headers['user-agent'] || ''
+      ]
+    );
+
+    res.status(500).json({ success: false, message: 'Failed to send OTP', error: err.message });
+  }
+};
+
+
+const verifyOtp = async (req, res) => {
+  const { email, otp } = req.body;
+  console.log("Email:", email, "OTP:", otp);
+  console.log("Current OTP Map:", otpMap);
+
+  const data = otpMap.get(email);
+  const from_email = process.env.SMTP_EMAIL || 'heetdhameliya59@gmail.com';
+
+  if (!data) {
+    // Log expired/missing OTP
+    await pool.query(
+      `INSERT INTO otp_logs (from_email, to_email, otp, status, ip_address, user_agent)
+       VALUES ($1, $2, $3, 'expired_or_missing', $4, $5)`,
+      [from_email, email, otp, req.ip, req.headers['user-agent'] || '']
+    );
+    return res.status(400).json({ message: "OTP not found or expired" });
+  }
+
+  if (data.otp !== otp) {
+    // Log invalid OTP attempt
+    await pool.query(
+      `INSERT INTO otp_logs (from_email, to_email, otp, status, ip_address, user_agent)
+       VALUES ($1, $2, $3, 'invalid', $4, $5)`,
+      [from_email, email, otp, req.ip, req.headers['user-agent'] || '']
+    );
+    return res.status(400).json({ message: "Invalid OTP" });
+  }
+
+  if (Date.now() > data.expiresAt) {
+    otpMap.delete(email);
+    // Log expired OTP
+    await pool.query(
+      `INSERT INTO otp_logs (from_email, to_email, otp, status, ip_address, user_agent)
+       VALUES ($1, $2, $3, 'expired', $4, $5)`,
+      [from_email, email, otp, req.ip, req.headers['user-agent'] || '']
+    );
+    return res.status(400).json({ message: "OTP expired" });
+  }
+
+  // Success: OTP verified
+  otpMap.delete(email);
+  await pool.query(
+    `INSERT INTO otp_logs (from_email, to_email, otp, status, ip_address, user_agent)
+     VALUES ($1, $2, $3, 'verified', $4, $5)`,
+    [from_email, email, otp, req.ip, req.headers['user-agent'] || '']
+  );
+
+  res.json({ message: "OTP verified successfully" });
+};
+
+
+const resetPassword = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    await pool.query(
+      'UPDATE users SET password = $1 WHERE email = $2',
+      [hashedPassword, email]
+    );
+    res.json({ message: 'Password reset successful', newPassword: password });
+  } catch (err) {
+    res.status(500).json({ message: 'Password reset failed', error: err.message });
+  }
+};
+
+
 module.exports = {
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
   login,
   newAdminController,
   newClientController,
   getAllAdminController,
   getAllClientController,
-  getNewSuperAdminController
+  getNewSuperAdminController,
+  getAllUsersController
 };

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { login, newAdminController, newClientController, getAllAdminController, getAllClientController, getNewSuperAdminController } = require('../controllers/authController');
+const { login, newAdminController, newClientController, getAllAdminController, getAllClientController, getNewSuperAdminController, getAllUsersController, forgotPassword, verifyOtp, resetPassword } = require('../controllers/authController');
 const { protect, superadmin, admin } = require('../middleware/authMiddleware');
 const { body, validationResult } = require("express-validator");
 
@@ -36,8 +36,16 @@ router.get("/all/admin", protect, superadmin, getAllAdminController)
 //admin got all client what creby him
 router.get("/all/client", protect, admin, getAllClientController)
 
+
+
+router.get("/all/users",protect, superadmin, getAllUsersController);
 //update-delete pachhi
 
-router.post("/new/superadmin", getNewSuperAdminController)
+router.post("/new/superadmin", getNewSuperAdminController);
+
+router.post('/forgot-password', forgotPassword);
+router.post('/verify-otp', verifyOtp);
+router.post('/reset-password', resetPassword);
+
 
 module.exports = router;

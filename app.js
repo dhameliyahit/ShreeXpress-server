@@ -15,7 +15,9 @@ const {
     users,
     branches,
     parcels,
-    parcel_status_history
+    parcel_status_history,
+    otp_logs,
+    blocked_emails
 } = require('./DB/initTables');
 const pool = require("./DB/connectdb");
 
@@ -27,6 +29,8 @@ const createTables = async () => {
         await branches();            // Required for parcels
         await parcels();             // Required for parcel_status_history
         await parcel_status_history();
+        await otp_logs();
+        await blocked_emails();
         console.log('✅ All tables initialized successfully');
     } catch (err) {
         console.error('❌ Error initializing tables:', err.message);
