@@ -33,13 +33,12 @@ router.post("/new/client", protect, admin, newClientController);
 //super admin get all admin
 router.get("/all/admin", protect, superadmin, getAllAdminController)
 
-//admin got all client what creby him
+//admin got all client which createdby him
 router.get("/all/client", protect, admin, getAllClientController)
 
 
-
 router.get("/all/users",protect, superadmin, getAllUsersController);
-//update-delete pachhi
+//update-delete pending
 
 router.post("/new/superadmin", getNewSuperAdminController);
 

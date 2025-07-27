@@ -190,30 +190,32 @@ const getAllClientController = async (req, res) => {
   try {
     const { id } = req.user;
 
-    const query = `SELECT * FROM users WHERE role = 'client' AND created_by = $1`
+    const query = `SELECT * FROM users WHERE role = 'client' AND created_by = $1`;
     const clients = await pool.query(query, [id]);
 
     if (clients.rows.length === 0) {
-      res.status(300).json({
-        client: "No Client's that creted by me!"
-      })
+      return res.status(200).json({
+        success: true,
+        message: "No clients created by you.",
+        total: 0,
+        users: []
+      });
     }
 
-    res.status(200).json({
-      message: "All Cleint Get Successfully",
+    return res.status(200).json({
+      success: true,
+      message: "Clients fetched successfully",
       total: clients.rowCount,
-      clients: clients.rows
-    })
-
-    // const client = await pool.query(query,[])
-
+      users: clients.rows,
+    });
   } catch (error) {
-    console.log("Error while Get client By Admin" + error.message)
-    res.status(500).json({
-      message: "Error while geting client By admin" + error.message
-    })
+    console.error("Error while getting clients:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching clients",
+    });
   }
-}
+};
 
 const getNewSuperAdminController = async (req, res) => {
   try {
@@ -232,7 +234,7 @@ const getNewSuperAdminController = async (req, res) => {
 
   } catch (error) {
     console.log("error" + error.message)
-    res.status(200).json({ message: "error while crete super admin" + error.message })
+    res.status(200).json({ message: "error while create super admin" + error.message })
   }
 }
 
