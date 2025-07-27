@@ -9,8 +9,8 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: process.env.SMTP_EMAIL || 'heetdhameliya59@gmail.com',
-    pass: process.env.SMTP_PASS || 'gvsaggsbhbsouwql',
+    user: process.env.SMTP_EMAIL || 'shreexpresscourierservice@gmail.com',
+    pass: process.env.SMTP_PASS || 'tisjpiwgqtlsuoxj',
   },
 });
 
@@ -269,7 +269,7 @@ const otpMap = new Map(); // In-memory store (email → otp)
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const from_email = process.env.SMTP_EMAIL || 'heetdhameliya59@gmail.com';
+  const from_email = process.env.SMTP_EMAIL || 'shreexpresscourierservice@gmail.com';
 
   try {
     // 1. Check if user exists
@@ -355,7 +355,7 @@ const verifyOtp = async (req, res) => {
   console.log("Current OTP Map:", otpMap);
 
   const data = otpMap.get(email);
-  const from_email = process.env.SMTP_EMAIL || 'heetdhameliya59@gmail.com';
+  const from_email = process.env.SMTP_EMAIL || 'shreexpresscourierservice@gmail.com';
 
   if (!data) {
     // Log expired/missing OTP
