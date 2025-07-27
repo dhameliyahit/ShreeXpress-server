@@ -244,7 +244,7 @@ const getAllUsersController = async (req, res) => {
     // Only allow these roles
     const validRoles = ['client', 'admin', 'superadmin'];
 
-    let query = 'SELECT id, name, email, role, created_at FROM users';
+    let query = 'SELECT id, name, email, role, created_at FROM users DESC';
     let values = [];
 
     if (role && validRoles.includes(role)) {
