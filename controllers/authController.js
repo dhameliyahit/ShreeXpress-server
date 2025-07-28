@@ -240,18 +240,17 @@ const getNewSuperAdminController = async (req, res) => {
 const getAllUsersController = async (req, res) => {
   try {
     const { role } = req.query;
-
     // Only allow these roles
     const validRoles = ['client', 'admin', 'superadmin'];
 
-    let query = 'SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC';
+    let query = 'SELECT id, name, email, role, created_at FROM users';
     let values = [];
 
     if (role && validRoles.includes(role)) {
       query += ' WHERE role = $1';
       values.push(role);
     }
-
+    query += ' ORDER BY created_at DESC';
     const result = await pool.query(query, values);
     res.json({ success: true, users: result.rows });
 
@@ -261,9 +260,8 @@ const getAllUsersController = async (req, res) => {
   }
 }
 
+
 const otpMap = new Map(); // In-memory store (email → otp)
-
-
 
 
 const forgotPassword = async (req, res) => {
