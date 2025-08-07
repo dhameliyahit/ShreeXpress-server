@@ -20,6 +20,7 @@ const {
     blocked_emails
 } = require('./DB/initTables');
 const pool = require("./DB/connectdb");
+const { protect, superadmin } = require("./middleware/authMiddleware");
 
 const createTables = async () => {
     try {
@@ -102,6 +103,18 @@ app.get('/sql/editor', async (req, res) => {
     }
 });
 
+//otp logs
+app.get('/api/otp-logs',protect,superadmin, async (req, res) => {
+    try {
+        const logs = await pool.query("SELECT * FROM otp_logs ORDER BY created_at DESC");
+        res.status(200).json(logs.rows);
+    } catch (error) {
+        console.error("Error fetching OTP logs:", error.message);
+        res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
+})
 
 
 app.listen(PORT || 3000, () => {

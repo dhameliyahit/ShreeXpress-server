@@ -43,11 +43,8 @@ const createBranch = async (req, res) => {
 const getAllBranches = async (req, res) => {
   try {
     const branches = await pool.query(`
-      SELECT b.*, u.name as created_by_name 
-      FROM branches b
-      LEFT JOIN users u ON b.created_by = u.id
-      ORDER BY b.created_at ASC
-    `);
+        SELECT * from branches Order By created_at DESC
+      `);
     res.json(branches.rows);
   } catch (err) {
     console.error(err.message);
