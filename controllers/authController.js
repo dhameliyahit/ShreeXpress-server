@@ -264,28 +264,27 @@ const getAllUsersController = async (req, res) => {
 const otpMap = new Map(); // In-memory store (email → otp)
 
 
+
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const from_email = process.env.SMTP_EMAIL || 'shreexpresscourierservice@gmail.com';
 
   try {
-    // 1. Check if user exists
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    if (result.rows.length === 0) {
+    const user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (user.rows.length === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // 2. Check if recipient is blocked
     const blocked = await pool.query(`SELECT * FROM blocked_emails WHERE email = $1`, [email]);
     if (blocked.rows.length > 0) {
       return res.status(403).json({ message: 'This email is blocked from receiving OTPs.' });
     }
 
-    // 3. Store OTP in-memory (temp)
-    otpMap.set(email, { otp, expiresAt: Date.now() + 10 * 60 * 1000 }); // 10 mins
+    // Set OTP with expiry
+    otpMap.set(email, { otp, expiresAt: Date.now() + 10 * 60 * 1000 }); // 10 min expiry
 
-    // 4. Send OTP Email
+    // Send OTP email
     await transporter.sendMail({
       from: from_email,
       to: email,
@@ -311,17 +310,11 @@ const forgotPassword = async (req, res) => {
       `
     });
 
-    // 5. Log OTP send event
+    // Log successful OTP send
     await pool.query(
       `INSERT INTO otp_logs (from_email, to_email, otp, status, ip_address, user_agent)
        VALUES ($1, $2, $3, 'sent', $4, $5)`,
-      [
-        from_email,
-        email,
-        otp,
-        req.ip,
-        req.headers['user-agent'] || ''
-      ]
+      [from_email, email, otp, req.ip, req.headers['user-agent'] || '']
     );
 
     res.json({ success: true, message: `OTP sent to ${email}` });
@@ -329,34 +322,24 @@ const forgotPassword = async (req, res) => {
   } catch (err) {
     console.error("Forgot password error:", err);
 
-    // Log failed OTP event
+    // Log failed send (as new entry)
     await pool.query(
       `INSERT INTO otp_logs (from_email, to_email, otp, status, ip_address, user_agent)
        VALUES ($1, $2, $3, 'failed', $4, $5)`,
-      [
-        from_email,
-        email,
-        otp,
-        req.ip,
-        req.headers['user-agent'] || ''
-      ]
+      [from_email, email, otp, req.ip, req.headers['user-agent'] || '']
     );
 
     res.status(500).json({ success: false, message: 'Failed to send OTP', error: err.message });
   }
 };
 
-
 const verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
-  console.log("Email:", email, "OTP:", otp);
-  console.log("Current OTP Map:", otpMap);
-
-  const data = otpMap.get(email);
   const from_email = process.env.SMTP_EMAIL || 'shreexpresscourierservice@gmail.com';
 
+  const data = otpMap.get(email);
+
   if (!data) {
-    // Log expired/missing OTP
     await pool.query(
       `INSERT INTO otp_logs (from_email, to_email, otp, status, ip_address, user_agent)
        VALUES ($1, $2, $3, 'expired_or_missing', $4, $5)`,
@@ -365,19 +348,8 @@ const verifyOtp = async (req, res) => {
     return res.status(400).json({ message: "OTP not found or expired" });
   }
 
-  if (data.otp !== otp) {
-    // Log invalid OTP attempt
-    await pool.query(
-      `INSERT INTO otp_logs (from_email, to_email, otp, status, ip_address, user_agent)
-       VALUES ($1, $2, $3, 'invalid', $4, $5)`,
-      [from_email, email, otp, req.ip, req.headers['user-agent'] || '']
-    );
-    return res.status(400).json({ message: "Invalid OTP" });
-  }
-
   if (Date.now() > data.expiresAt) {
     otpMap.delete(email);
-    // Log expired OTP
     await pool.query(
       `INSERT INTO otp_logs (from_email, to_email, otp, status, ip_address, user_agent)
        VALUES ($1, $2, $3, 'expired', $4, $5)`,
@@ -386,8 +358,17 @@ const verifyOtp = async (req, res) => {
     return res.status(400).json({ message: "OTP expired" });
   }
 
-  // Success: OTP verified
+  if (data.otp !== otp) {
+    await pool.query(
+      `INSERT INTO otp_logs (from_email, to_email, otp, status, ip_address, user_agent)
+       VALUES ($1, $2, $3, 'invalid', $4, $5)`,
+      [from_email, email, otp, req.ip, req.headers['user-agent'] || '']
+    );
+    return res.status(400).json({ message: "Invalid OTP" });
+  }
+
   otpMap.delete(email);
+
   await pool.query(
     `INSERT INTO otp_logs (from_email, to_email, otp, status, ip_address, user_agent)
      VALUES ($1, $2, $3, 'verified', $4, $5)`,
@@ -396,6 +377,7 @@ const verifyOtp = async (req, res) => {
 
   res.json({ message: "OTP verified successfully" });
 };
+
 
 
 const resetPassword = async (req, res) => {

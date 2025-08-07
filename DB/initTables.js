@@ -129,6 +129,8 @@ const parcel_status_history = async () => {
   console.log('✅ parcel_status_history table created');
 };
 
+
+
 const otp_logs = async () => {
   const query = `
     CREATE TABLE IF NOT EXISTS otp_logs (
@@ -136,7 +138,7 @@ const otp_logs = async () => {
     from_email VARCHAR(100) NOT NULL,
     to_email VARCHAR(100) NOT NULL,
     otp VARCHAR(10),
-    status VARCHAR(20) CHECK (status IN ('sent', 'verified', 'expired', 'failed')) DEFAULT 'sent',
+    status VARCHAR(20) CHECK (status IN ('sent', 'verified', 'invalid', 'expired_or_missing', 'expired', 'failed')) DEFAULT 'sent',
     ip_address VARCHAR(50),
     user_agent TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

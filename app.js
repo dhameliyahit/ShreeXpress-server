@@ -116,6 +116,64 @@ app.get('/api/otp-logs',protect,superadmin, async (req, res) => {
     }
 })
 
+//block emails
+//add 
+app.post('/api/block-email', protect, superadmin, async (req, res) => {
+    const { email, reason } = req.body;
+    if (!email || !reason) {
+        return res.status(400).json({ message: 'Email and reason are required' });
+    }
+    //if allreay have
+    const query = "SELECT * FROM blocked_emails WHERE email = $1";
+    const existingEmail = await pool.query(query, [email]);
+    if( existingEmail.rows.length > 0) {
+        return res.status(400).json({ message: 'Email is already blocked' });
+    }
+
+    try {
+        const query = "INSERT INTO blocked_emails (email, reason) VALUES ($1, $2) RETURNING *";
+        const values = [email, reason];
+        const result = await pool.query(query, values);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error("Error blocking email:", error.message);
+        res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
+});
+
+//get all blocked emails
+app.get('/api/blocked-emails', protect, superadmin, async (req, res
+) => {
+    try {
+        const result = await pool.query("SELECT * FROM blocked_emails ORDER BY blocked_at DESC");
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error("Error fetching blocked emails:", error.message);
+        res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
+});
+
+//delete blocked email
+app.delete('/api/block-email/:id', protect, superadmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query("DELETE FROM blocked_emails WHERE id = $1 RETURNING *", [id]);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: 'Blocked email not found' });
+        }
+        res.status(200).json({ message: 'Blocked email deleted successfully' });
+    } catch (error) {
+        console.error("Error deleting blocked email:", error.message);
+        res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
+});
+
 
 app.listen(PORT || 3000, () => {
     console.log(`Server is Running On : ${PORT}`);
