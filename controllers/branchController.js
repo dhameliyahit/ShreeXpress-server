@@ -69,7 +69,7 @@ const getBranch = async (req, res) => {
       return res.status(404).json({ error: 'Branch not found' });
     }
 
-    res.json(branch.rows[0]);
+    res.json(branch.rows);
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ error: 'Server error' });
