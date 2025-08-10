@@ -114,19 +114,19 @@ const getAllBranchName = async (req, res) => {
 
 const BranchInfoController = async (req, res) => {
   try {
-    const query = "SELECT DISTINCT id,branch_name from branches";
-    const branches = pool.query(query);
+    const query = "SELECT DISTINCT id, branch_name FROM branches";
+    const result = await pool.query(query); // ✅ await to get the actual result
 
     res.status(200).json({
-      message:"all Branches get successfully.",
-      branches:branches.rows
-    })
+      message: "All branches info fetched successfully.",
+      branches: result.rows || [] // ✅ always send an array
+    });
 
   } catch (error) {
-    console.error(err.message);
+    console.error(error.message); // ✅ correct variable name
     res.status(500).json({ error: 'Server error' });
   }
-}
+};
 
 // Update branch
 const updateBranch = async (req, res) => {
