@@ -205,9 +205,43 @@ const updateParcelStatus = async (req, res) => {
   }
 };
 
+
+const MyCourierController = async (req, res) => {
+  try {
+    // Assuming you store admin ID in req.user.id after authentication
+    const adminId = req.user.id;
+
+    // Fetch parcels created by this admin only
+    const query = `
+      SELECT 
+        p.*, 
+        fb.branch_name AS from_branch_name,
+        tb.branch_name AS to_branch_name
+      FROM parcels p
+      JOIN branches fb ON p.from_branch = fb.id
+      JOIN branches tb ON p.to_branch = tb.id
+      WHERE p.created_by = $1
+      ORDER BY p.created_at DESC
+    `;
+
+    const result = await pool.query(query, [adminId]);
+
+    res.json({
+      success: true,
+      count: result.rowCount,
+      parcels: result.rows
+    });
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
 module.exports = {
   createParcel,
   getAllParcels,
   getParcelByTrackingNumber,
-  updateParcelStatus
+  updateParcelStatus,
+  MyCourierController
 };
