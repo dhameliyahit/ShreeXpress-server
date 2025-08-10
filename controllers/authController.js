@@ -49,13 +49,16 @@ const login = async (req, res) => {
       user: {
         id: user.id,
         name: user.name,
-        role: user.role
+        role: user.role,
+        message: `Welcome back ${user.name}`,
       }
     });
 
   } catch (err) {
     console.error('Login error:', err.message);
-    res.status(500).send('Server error');
+    res.status(500).send({
+      message: 'Server error'+err.message,
+    });
   }
 };
 

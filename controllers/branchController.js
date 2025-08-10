@@ -14,7 +14,7 @@ const createBranch = async (req, res) => {
     }
 
     const userId = req.user.id;
-
+    
     const existing = await pool.query(
       'SELECT * FROM branches WHERE created_by = $1',
       [userId]
