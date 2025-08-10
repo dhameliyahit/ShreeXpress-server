@@ -14,7 +14,7 @@ const createBranch = async (req, res) => {
     }
 
     const userId = req.user.id;
-    
+
     const existing = await pool.query(
       'SELECT * FROM branches WHERE created_by = $1',
       [userId]
@@ -112,6 +112,21 @@ const getAllBranchName = async (req, res) => {
 };
 
 
+const BranchInfoController = async (req, res) => {
+  try {
+    const query = "SELECT DISTINCT id,branch_name from branches";
+    const branches = pool.query(query);
+
+    res.status(200).json({
+      message:"all Branches get successfully.",
+      branches:branches.rows
+    })
+
+  } catch (error) {
+    console.error(err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+}
 
 // Update branch
 const updateBranch = async (req, res) => {
@@ -160,5 +175,6 @@ module.exports = {
   getBranch,
   updateBranch,
   deleteBranch,
-  getAllBranchName
+  getAllBranchName,
+  BranchInfoController
 };

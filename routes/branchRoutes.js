@@ -6,7 +6,8 @@ const {
   getBranch,
   updateBranch,
   deleteBranch,
-  getAllBranchName
+  getAllBranchName,
+  BranchInfoController
 } = require('../controllers/branchController');
 const { protect, admin, superadmin } = require('../middleware/authMiddleware');
 
@@ -16,5 +17,5 @@ router.get('/all/:searchTerm', getBranch);
 router.get("/names/:branchName",getAllBranchName);
 router.put('/:id', protect, admin, updateBranch);
 router.delete('/:id',protect,superadmin, deleteBranch);
-
+router.get("/info/branch",protect,admin,BranchInfoController)
 module.exports = router;
