@@ -5,7 +5,8 @@ const {
   getAllParcels,
   getParcelByTrackingNumber,
   updateParcelStatus,
-  MyCourierController
+  MyCourierController,
+  PaymentStatusChangeController
 } = require('../controllers/parcelController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
@@ -15,5 +16,8 @@ router.get('/track/:trackingNumber', getParcelByTrackingNumber);
 router.put('/:id/status', protect, updateParcelStatus);
 // // what ever admin crete that only see thire.. allparcels
 router.get("/my/courier",protect,admin,MyCourierController)
+
+//payment statues change
+router.patch("/payment/status", PaymentStatusChangeController )
 
 module.exports = router;

@@ -238,10 +238,42 @@ const MyCourierController = async (req, res) => {
   }
 };
 
+const PaymentStatusChangeController = async (req, res) => {
+  try {
+    const { id, payment_status, payment_method } = req.body;
+
+    if (!id || !payment_status || !payment_method) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    const query = `
+      UPDATE parcels
+      SET payment_status = $1,
+          payment_method = $2,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = $3
+      RETURNING *
+    `;
+
+    const result = await pool.query(query, [payment_status, payment_method, id]);
+
+    res.status(200).json({
+      message: "Payment status & method updated successfully",
+      updatedParcel: result.rows[0]
+    });
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
 module.exports = {
   createParcel,
   getAllParcels,
   getParcelByTrackingNumber,
   updateParcelStatus,
-  MyCourierController
+  MyCourierController,
+  PaymentStatusChangeController
 };
