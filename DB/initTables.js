@@ -40,14 +40,14 @@ const contactTable = async () => {
 const users = async () => {
   const query = `
     CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      name VARCHAR(100),
-      email VARCHAR(100) UNIQUE,
-      password TEXT NOT NULL,
-      role VARCHAR(50) CHECK (role IN ('client', 'admin', 'superadmin')) DEFAULT 'client',
-      created_by INTEGER,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100) UNIQUE,
+    password TEXT NOT NULL,
+    role VARCHAR(50) CHECK (role IN ('client', 'admin', 'superadmin')) DEFAULT 'client',
+    created_by INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
   `;
   await pool.query(query);
   console.log('✅ users table created');

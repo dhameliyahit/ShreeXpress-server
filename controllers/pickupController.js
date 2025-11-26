@@ -3,16 +3,16 @@ const pool = require('../DB/connectdb');
 // Create pickup request
 const createPickupRequest = async (req, res) => {
   try {
-    const { 
-      full_name, 
-      phone_number, 
-      pincode, 
-      goods_type, 
-      approx_weight, 
-      address, 
-      nearest_branch 
+    const {
+      full_name,
+      phone_number,
+      pincode,
+      goods_type,
+      approx_weight,
+      address,
+      nearest_branch
     } = req.body;
-    
+
     const newRequest = await pool.query(
       `INSERT INTO pickup_requests 
       (full_name, phone_number, pincode, goods_type, approx_weight, address, nearest_branch) 
@@ -20,7 +20,7 @@ const createPickupRequest = async (req, res) => {
       RETURNING *`,
       [full_name, phone_number, pincode, goods_type, approx_weight, address, nearest_branch]
     );
-    
+
     res.status(201).json(newRequest.rows[0]);
   } catch (err) {
     console.error(err.message);
@@ -46,16 +46,16 @@ const getAllPickupRequests = async (req, res) => {
 const getPickupRequestById = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const request = await pool.query(
       'SELECT * FROM pickup_requests WHERE id = $1',
       [id]
     );
-    
+
     if (request.rows.length === 0) {
       return res.status(404).json({ error: 'Request not found' });
     }
-    
+
     res.json(request.rows[0]);
   } catch (err) {
     console.error(err.message);

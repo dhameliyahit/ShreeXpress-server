@@ -5,36 +5,33 @@ const pool = require('../DB/connectdb');
 const protect = async (req, res, next) => {
   let token;
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
-    try {
-      // 1. Extract token
-      token = req.headers.authorization.split(' ')[1];
-      // 2. Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  console.log("[AUTH] Authorization header:", req.headers.authorization);
 
-      // 3. Get user from DB
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      token = req.headers.authorization.split(' ')[1];
+      console.log("[AUTH] Extracted token:", token);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log("[AUTH] Decoded JWT:", decoded);
+
       const result = await pool.query('SELECT * FROM users WHERE id = $1', [decoded.id]);
+      console.log("[AUTH] User query result:", result.rows);
 
       if (result.rows.length === 0) {
         return res.status(401).json({ error: 'Not authorized, user not found' });
       }
 
-      // 4. Attach user to request
       req.user = result.rows[0];
-
-      return next();
+      next();
 
     } catch (error) {
-      console.error('Token verification error:', error.message);
+      console.error('[AUTH] Token verification error:', error.message);
       return res.status(401).json({ error: 'Not authorized, token failed' });
     }
+  } else {
+    console.warn("[AUTH] No Bearer token in header");
+    return res.status(401).json({ error: 'Not authorized, no token' });
   }
-
-  // No token at all
-  return res.status(401).json({ error: 'Not authorized, no token' });
 };
 
 const admin = (req, res, next) => {

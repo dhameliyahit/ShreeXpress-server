@@ -42,7 +42,7 @@ createTables();
 
 const app = express();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -52,9 +52,6 @@ app.use('/api/branches', branchRoutes);
 app.use('/api/courier', parcelRoutes);
 app.use('/api/pickups', pickupRoutes);
 app.use('/api/contact', contactRoutes);
-
-
-
 
 app.get('/', (req, res) => {
     //  res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -80,7 +77,6 @@ app.get("/api/all", async (req, res) => {
     }
 })
 
-
 app.get('/sql/editor', async (req, res) => {
     const { query } = req.query;
 
@@ -104,7 +100,7 @@ app.get('/sql/editor', async (req, res) => {
 });
 
 //otp logs
-app.get('/api/otp-logs',protect,superadmin, async (req, res) => {
+app.get('/api/otp-logs', protect, superadmin, async (req, res) => {
     try {
         const logs = await pool.query("SELECT * FROM otp_logs ORDER BY created_at DESC");
         res.status(200).json(logs.rows);
@@ -126,7 +122,7 @@ app.post('/api/block-email', protect, superadmin, async (req, res) => {
     //if allreay have
     const query = "SELECT * FROM blocked_emails WHERE email = $1";
     const existingEmail = await pool.query(query, [email]);
-    if( existingEmail.rows.length > 0) {
+    if (existingEmail.rows.length > 0) {
         return res.status(400).json({ message: 'Email is already blocked' });
     }
 
@@ -175,6 +171,6 @@ app.delete('/api/block-email/:id', protect, superadmin, async (req, res) => {
 });
 
 
-app.listen(PORT || 3000, () => {
+app.listen(PORT || 5000, () => {
     console.log(`Server is Running On : ${PORT}`);
 });

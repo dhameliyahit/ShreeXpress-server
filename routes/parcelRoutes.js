@@ -10,10 +10,10 @@ const {
 } = require('../controllers/parcelController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
-router.post('/new/courier', protect,admin, createParcel);
+router.post('/new/courier', protect, admin, createParcel);
 router.get('/all/courier', protect, getAllParcels);
 router.get('/track/:trackingNumber', getParcelByTrackingNumber);
-router.put('/:id/status', protect, updateParcelStatus);
+router.put('/:id/status', protect, admin, updateParcelStatus);
 // // what ever admin crete that only see thire.. allparcels
 router.get("/my/courier",protect,admin,MyCourierController)
 
