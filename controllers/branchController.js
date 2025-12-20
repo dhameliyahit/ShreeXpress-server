@@ -1,171 +1,168 @@
-const pool = require('../DB/connectdb');
+const Branch = require("../models/Branch");
 
-// Create branch (admin/superadmin only)
+/* ================= CREATE BRANCH ================= */
 const createBranch = async (req, res) => {
   try {
     const { branch_name, address, pincode, phone } = req.body;
 
-    if (!branch_name || !address || !pincode || !phone ||
-      branch_name.trim() === '' ||
-      address.trim() === '' ||
-      pincode.toString().length !== 6 || isNaN(pincode) ||
-      phone.toString().length !== 10 || isNaN(phone)) {
-      return res.status(400).send({ error: 'Invalid input. Please check all fields.' });
+    if (
+      !branch_name ||
+      !address ||
+      !pincode ||
+      !phone ||
+      branch_name.trim() === "" ||
+      address.trim() === "" ||
+      pincode.length !== 6 ||
+      phone.length !== 10
+    ) {
+      return res.status(400).json({
+        error: "Invalid input. Please check all fields."
+      });
     }
 
     const userId = req.user.id;
 
-    const existing = await pool.query(
-      'SELECT * FROM branches WHERE created_by = $1',
-      [userId]
-    );
-
-    if (existing.rowCount > 0) {
+    // Only one branch per admin
+    const existing = await Branch.findOne({ created_by: userId });
+    if (existing) {
       return res.status(409).json({
-        error: 'You have already created a branch. Only one branch per admin is allowed.'
+        error: "You have already created a branch. Only one branch per admin is allowed."
       });
     }
 
+    const branch = await Branch.create({
+      branch_name,
+      address,
+      pincode,
+      phone,
+      created_by: userId
+    });
 
-    const newBranch = await pool.query(
-      'INSERT INTO branches (branch_name, address, phone, pincode, created_by) VALUES ($1, $2, $3, $4,$5) RETURNING *',
-      [branch_name, address, phone, pincode, req.user.id]
-    );
+    res.status(201).json(branch);
 
-    res.status(201).json(newBranch.rows[0]);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: 'Server error' });
+  } catch (error) {
+    console.error("Create Branch Error:", error.message);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-// Get all branches
+/* ================= GET ALL BRANCHES ================= */
 const getAllBranches = async (req, res) => {
   try {
-    const branches = await pool.query(`
-        SELECT * from branches Order By created_at DESC
-      `);
-    res.json(branches.rows);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: 'Server error' });
+    const branches = await Branch.find().sort({ createdAt: -1 });
+    res.status(200).json(branches);
+  } catch (error) {
+    console.error("Get All Branches Error:", error.message);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-
-// Get branch by ID
+/* ================= SEARCH BRANCH ================= */
 const getBranch = async (req, res) => {
   try {
     const { searchTerm } = req.params;
 
-    const branch = await pool.query(`
-      SELECT *
-      FROM branches
-      WHERE branch_name ILIKE $1 OR pincode = $2
-`, [`%${searchTerm}%`, searchTerm]);
+    const branches = await Branch.find({
+      $or: [
+        { branch_name: { $regex: searchTerm, $options: "i" } },
+        { pincode: searchTerm }
+      ]
+    });
 
-
-    if (branch.rows.length === 0) {
-      return res.status(404).json({ error: 'Branch not found' });
+    if (branches.length === 0) {
+      return res.status(404).json({ error: "Branch not found" });
     }
 
-    res.json(branch.rows);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: 'Server error' });
+    res.status(200).json(branches);
+  } catch (error) {
+    console.error("Get Branch Error:", error.message);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
+/* ================= GET BRANCH NAME SUGGESTION ================= */
 const getAllBranchName = async (req, res) => {
   try {
     const { branchName } = req.params;
 
-    const query = `
-      SELECT DISTINCT branch_name 
-      FROM branches 
-      WHERE branch_name ILIKE $1
-    `;
+    const branches = await Branch.find(
+      { branch_name: { $regex: branchName, $options: "i" } },
+      { branch_name: 1, _id: 0 }
+    ).distinct("branch_name");
 
-    const values = [`%${branchName}%`]; // finds substring anywhere in name
-
-    const BNames = await pool.query(query, values);
-
-    if (BNames.rowCount === 0) {
+    if (branches.length === 0) {
       return res.status(404).json({
         message: "No branches match the given name",
         suggestions: []
       });
     }
 
-    return res.status(200).json({
+    res.status(200).json({
       message: `Branches matching "${branchName}"`,
-      branches: BNames.rows
+      branches
     });
 
   } catch (error) {
-    console.error("Error:", error.message);
-    res.status(500).json({
-      message: "Internal server error",
-      error: error.message
-    });
+    console.error("Branch Name Error:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-
+/* ================= BRANCH INFO (ID + NAME) ================= */
 const BranchInfoController = async (req, res) => {
   try {
-    const query = "SELECT DISTINCT id, branch_name FROM branches";
-    const result = await pool.query(query); // ✅ await to get the actual result
+    const branches = await Branch.find({}, { branch_name: 1 });
 
     res.status(200).json({
       message: "All branches info fetched successfully.",
-      branches: result.rows || [] // ✅ always send an array
+      branches
     });
 
   } catch (error) {
-    console.error(error.message); // ✅ correct variable name
-    res.status(500).json({ error: 'Server error' });
+    console.error("Branch Info Error:", error.message);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-// Update branch
+/* ================= UPDATE BRANCH ================= */
 const updateBranch = async (req, res) => {
   try {
     const { id } = req.params;
     const { branch_name, address, phone, pincode } = req.body;
 
-    const updatedBranch = await pool.query(
-      'UPDATE branches SET branch_name = $1, address = $2, phone = $3 pincode = $4 WHERE id = $5 RETURNING *',
-      [branch_name, address, phone, pincode, id]
+    const branch = await Branch.findByIdAndUpdate(
+      id,
+      { branch_name, address, phone, pincode },
+      { new: true }
     );
 
-    if (updatedBranch.rows.length === 0) {
-      return res.status(404).json({ error: 'Branch not found' });
+    if (!branch) {
+      return res.status(404).json({ error: "Branch not found" });
     }
 
-    res.json(updatedBranch.rows[0]);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: 'Server error' });
+    res.status(200).json(branch);
+
+  } catch (error) {
+    console.error("Update Branch Error:", error.message);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-// Delete branch
+/* ================= DELETE BRANCH ================= */
 const deleteBranch = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Check if branch exists
-    const branchExists = await pool.query('SELECT id FROM branches WHERE id = $1', [id]);
-    if (branchExists.rows.length === 0) {
-      return res.status(404).json({ error: 'Branch not found' });
+    const branch = await Branch.findByIdAndDelete(id);
+    if (!branch) {
+      return res.status(404).json({ error: "Branch not found" });
     }
 
-    await pool.query('DELETE FROM branches WHERE id = $1', [id]);
-    res.json({ message: 'Branch deleted successfully' });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: 'Server error' });
+    res.status(200).json({ message: "Branch deleted successfully" });
+
+  } catch (error) {
+    console.error("Delete Branch Error:", error.message);
+    res.status(500).json({ error: "Server error" });
   }
 };
 

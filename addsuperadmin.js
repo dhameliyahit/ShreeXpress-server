@@ -1,34 +1,55 @@
-// addSuperAdmin.js
-const pool = require('./DB/connectdb'); // Import your existing pool
-const bcrypt = require('bcrypt');
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+require("dotenv").config();
 
-async function addsuperadmin() {
+// Import User model
+const User = require("./models/User");
+
+// Connect DB
+const connectDB = async () => {
     try {
-        const name = 'Balar Crens';
-        const email = 'balarcrens@gmail.com';
-        const password = 'crens446';
-        const role = 'superadmin';
-
-        // Hash the password
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-        // Insert into users table
-        const query = `
-  INSERT INTO users (name, email, password, role, created_at)
-  VALUES ($1, $2, $3, $4, NOW())
-  RETURNING id
-`;
-        const values = [name, email, hashedPassword, role];
-
-        const result = await pool.query(query, values);
-        console.log('Super admin added with ID:', result.rows[0].id);
-
-        // Optionally, you can end the pool if this is a one-time script
-        await pool.end();
-    } catch (err) {
-        console.error('Error adding super admin:', err.message);
+        await mongoose.connect(process.env.MONGO_URI);
+        console.log("MongoDB Connected");
+    } catch (error) {
+        console.error("DB connection failed:", error.message);
+        process.exit(1);
     }
-}
+};
 
-addsuperadmin();
+const addSuperAdmin = async () => {
+    try {
+        await connectDB();
+
+        const name = "Balar Crens";
+        const email = "balarcrens@gmail.com";
+        const password = "crens446";
+        const role = "superadmin";
+
+        // Check if already exists
+        const existing = await User.findOne({ email });
+        if (existing) {
+            console.log("❌ Superadmin already exists");
+            process.exit();
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = await User.create({
+            name,
+            email,
+            password: hashedPassword,
+            role
+        });
+
+        console.log("✅ Superadmin created successfully");
+        console.log("ID:", user._id.toString());
+
+        process.exit();
+    } catch (error) {
+        console.error("Error creating superadmin:", error.message);
+        process.exit(1);
+    }
+};
+
+addSuperAdmin();

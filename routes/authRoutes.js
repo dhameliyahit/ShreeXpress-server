@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { login, newAdminController, newClientController, getAllAdminController, getAllClientController, deleteClientController, getNewSuperAdminController, getAllUsersController, forgotPassword, verifyOtp, resetPassword } = require('../controllers/authController');
 const { protect, superadmin, admin } = require('../middleware/authMiddleware');
-const { body, validationResult } = require("express-validator");
+const { body } = require("express-validator");
 
 
 router.post('/login', login);
@@ -14,7 +14,7 @@ router.post("/new/admin", protect, superadmin, [
     body("role").notEmpty().withMessage("Role must be define")
 ], newAdminController);
 
-router.post("/new/client", protect)
+// router.post("/new/client", protect)
 
 router.post("/new/client", protect, admin, newClientController);
 

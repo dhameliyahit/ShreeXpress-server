@@ -1,4 +1,4 @@
-const pool = require('../DB/connectdb');
+const PickupRequest = require("../models/PickupRequest");
 
 // Create pickup request
 const createPickupRequest = async (req, res) => {
@@ -13,32 +13,39 @@ const createPickupRequest = async (req, res) => {
       nearest_branch
     } = req.body;
 
-    const newRequest = await pool.query(
-      `INSERT INTO pickup_requests 
-      (full_name, phone_number, pincode, goods_type, approx_weight, address, nearest_branch) 
-      VALUES ($1, $2, $3, $4, $5, $6, $7) 
-      RETURNING *`,
-      [full_name, phone_number, pincode, goods_type, approx_weight, address, nearest_branch]
-    );
+    // Basic validation
+    if (!full_name || !phone_number || !pincode || !goods_type || !address || !nearest_branch) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
 
-    res.status(201).json(newRequest.rows[0]);
+    const newRequest = await PickupRequest.create({
+      full_name,
+      phone_number,
+      pincode,
+      goods_type,
+      approx_weight,
+      address,
+      nearest_branch
+    });
+
+    res.status(201).json(newRequest);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: 'Server error' });
+    console.error("Create Pickup Request Error:", err.message);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-// Get all pickup requests (admin only)
+// Get all pickup requests (admin)
 const getAllPickupRequests = async (req, res) => {
   try {
-    const requests = await pool.query(`
-      SELECT * FROM pickup_requests 
-      ORDER BY created_at DESC
-    `);
-    res.json(requests.rows);
+    const requests = await PickupRequest.find()
+      .sort({ createdAt: -1 })
+      .populate("nearest_branch", "branch_name"); // optional
+
+    res.json(requests);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: 'Server error' });
+    console.error("Get All Pickup Requests Error:", err.message);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -47,19 +54,17 @@ const getPickupRequestById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const request = await pool.query(
-      'SELECT * FROM pickup_requests WHERE id = $1',
-      [id]
-    );
+    const request = await PickupRequest.findById(id)
+      .populate("nearest_branch", "branch_name");
 
-    if (request.rows.length === 0) {
-      return res.status(404).json({ error: 'Request not found' });
+    if (!request) {
+      return res.status(404).json({ error: "Request not found" });
     }
 
-    res.json(request.rows[0]);
+    res.json(request);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ error: 'Server error' });
+    console.error("Get Pickup Request By ID Error:", err.message);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
