@@ -12,6 +12,7 @@ const createParcel = async (req, res) => {
             receiver_name,
             receiver_phone,
             receiver_address,
+            from_branch,
             to_branch,
             weight,
             dimensions,
@@ -19,8 +20,6 @@ const createParcel = async (req, res) => {
             delivery_notes,
             payment_method
         } = req.body;
-
-        const from_branch = req.user.branch; // store branchId in JWT
 
         if (!sender_name || !sender_phone || !sender_address || !receiver_name || !receiver_phone || !receiver_address || !from_branch || !to_branch || !weight || !package_type || !payment_method) {
             return res.status(400).json({ error: "Missing required fields" });
@@ -143,7 +142,7 @@ const updateParcelStatus = async (req, res) => {
         }
 
         await ParcelHistory.create({
-            parcel_id: parcel._id,
+            parcel_id: parcel.id,
             status,
             updated_by: req.user.id
         });
@@ -151,7 +150,7 @@ const updateParcelStatus = async (req, res) => {
         res.json({ success: true, parcel });
 
     } catch (error) {
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: "Server error", error: error.message });
     }
 };
 

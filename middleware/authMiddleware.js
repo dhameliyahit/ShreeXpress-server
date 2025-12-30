@@ -5,7 +5,7 @@ const User = require("../models/User"); // Mongoose User model
 const protect = async (req, res, next) => {
   let token;
 
-  console.log("[AUTH] Authorization header:", req.headers.authorization);
+  // console.log("[AUTH] Authorization header:", req.headers.authorization);
 
   if (
     req.headers.authorization &&
@@ -13,10 +13,10 @@ const protect = async (req, res, next) => {
   ) {
     try {
       token = req.headers.authorization.split(" ")[1];
-      console.log("[AUTH] Extracted token:", token);
+      // console.log("[AUTH] Extracted token:", token);
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log("[AUTH] Decoded JWT:", decoded);
+      // console.log("[AUTH] Decoded JWT:", decoded);
 
       const user = await User.findById(decoded.id).select("-password");
 
