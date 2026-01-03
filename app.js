@@ -15,6 +15,7 @@ const pickupRoutes = require("./routes/pickupRoutes");
 const branchRoutes = require("./routes/branchRoutes");
 const parcelRoutes = require("./routes/parcelRoutes");
 const contactRoutes = require("./routes/contactRoutes");
+const franchiseRoutes = require("./routes/franchiseRoutes");
 
 const { protect, superadmin } = require("./middleware/authMiddleware");
 
@@ -29,6 +30,7 @@ app.use("/api/branches", branchRoutes);
 app.use("/api/courier", parcelRoutes);
 app.use("/api/pickups", pickupRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/franchise", franchiseRoutes);
 
 app.get("/", (req, res) => {
     res.send("<h1>ShreeXpress Courier API (MongoDB)</h1>");

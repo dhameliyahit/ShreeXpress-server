@@ -5,23 +5,11 @@ const createContactRequest = async (req, res) => {
     try {
         const { full_name, phone_number, email, subject, message } = req.body;
 
-        if (
-            !full_name ||
-            !phone_number ||
-            !email ||
-            !subject ||
-            !message
-        ) {
+        if (!full_name || !phone_number || !email || !subject || !message) {
             return res.status(400).json({ error: "All fields are required" });
         }
 
-        const contact = await ContactRequest.create({
-            full_name,
-            phone_number,
-            email,
-            subject,
-            message
-        });
+        const contact = await ContactRequest.create({ full_name, phone_number, email, subject, message });
 
         res.status(201).json(contact);
 

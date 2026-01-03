@@ -157,9 +157,9 @@ const forgotPassword = async (req, res) => {
         await transporter.sendMail({
             from: `"ShreeXpress Courier Service" <${process.env.SMTP_EMAIL}>`,
             to: email,
-            subject: "Your OTP to Reset ShreeXpress Account Password",
+            subject: "Your OTP to Reset Password",
             html: `
-    <div style="font-family: Arial, Helvetica, sans-serif; background-color:#f4f6f8; padding:30px;">
+    <div style="font-family: Arial, Helvetica, sans-serif;">
         <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:10px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08);">
             
             <!-- Header -->
