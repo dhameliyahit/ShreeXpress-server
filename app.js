@@ -74,6 +74,23 @@ app.get("/api/blocked-emails", protect, superadmin, async (req, res) => {
     res.json(emails);
 });
 
+app.delete("/api/block-email/:id", protect, superadmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const blockedEmail = await BlockedEmail.findById(id);
+        if (!blockedEmail) {
+            return res.status(404).json({ message: "Blocked email not found" });
+        }
+
+        await BlockedEmail.findByIdAndDelete(id);
+        res.json({ message: "Email unblocked successfully" });
+    } catch (error) {
+        console.error("Delete Blocked Email Error:", error.message);
+        res.status(500).json({ message: "Failed to unblock email", error: error.message });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
 });

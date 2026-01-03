@@ -133,6 +133,34 @@ const getAllUsersController = async (req, res) => {
     res.json({ users });
 };
 
+/* ================= UPDATE USER ROLE ================= */
+const updateUserRoleController = async (req, res) => {
+    try {
+        const loggedInUserId = req.user.id;
+        const { id } = req.params;
+        const { role } = req.body;
+
+        if (!["superadmin", "admin", "client"].includes(role)) {
+            return res.status(400).json({ message: "Invalid role" });
+        }
+
+        if (loggedInUserId === id) {
+            return res.status(403).json({ message: "You cannot change your own role" });
+        }
+
+        const user = await User.findById(id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        user.role = role;
+        await user.save();
+
+        res.json({ message: "User role updated successfully", user });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Failed to update role", error: error.message });
+    }
+};
+
 /* ================= FORGOT PASSWORD ================= */
 const forgotPassword = async (req, res) => {
     try {
@@ -285,6 +313,7 @@ module.exports = {
     deleteClientController,
     getNewSuperAdminController,
     getAllUsersController,
+    updateUserRoleController,
     forgotPassword,
     verifyOtp,
     resetPassword
