@@ -31,4 +31,20 @@ const getAllFranchiseRequest = async (req, res) => {
     }
 };
 
-module.exports = { createFranchiseRequest, getAllFranchiseRequest };
+const deleteFranchiseRequestById = async (req, res) => {
+    try {
+        const id = req.params.id;
+    
+        const deletedFranchise = await Franchise.findByIdAndDelete(id);
+
+        if (!deletedFranchise) {
+            return res.status(404).json({ message: "Franchise not found" });
+        }
+
+        res.status(200).json({ message: "Franchise Deleted" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = { createFranchiseRequest, getAllFranchiseRequest, deleteFranchiseRequestById };
