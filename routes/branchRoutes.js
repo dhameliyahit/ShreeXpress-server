@@ -17,5 +17,5 @@ router.get('/all/:searchTerm', getBranch);
 router.get("/names/:branchName",getAllBranchName);
 router.put('/:id', protect, admin, updateBranch);
 router.delete('/:id',protect,superadmin, deleteBranch);
-router.get("/info/branch",protect,admin,BranchInfoController)
+router.get("/info/branch",protect, BranchInfoController)
 module.exports = router;

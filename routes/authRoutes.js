@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { login, newAdminController, newClientController, getAllAdminController, getAllClientController, deleteClientController, getNewSuperAdminController, getAllUsersController, forgotPassword, verifyOtp, resetPassword, updateUserRoleController } = require('../controllers/authController');
+const { login, newAdminController, newClientController, getAllAdminController, deleteUserBySuperadmin, getAllClientController, deleteClientController, getNewSuperAdminController, getAllUsersController, forgotPassword, verifyOtp, resetPassword, updateUserRoleController } = require('../controllers/authController');
 const { protect, superadmin, admin } = require('../middleware/authMiddleware');
 const { body } = require("express-validator");
 
@@ -20,6 +20,8 @@ router.post("/new/client", protect, admin, newClientController);
 
 //super admin get all admin
 router.get("/all/admin", protect, superadmin, getAllAdminController)
+
+router.delete("/users/:id", protect, superadmin, deleteUserBySuperadmin);
 
 //admin got all client what creby him
 router.get("/all/client", protect, admin, getAllClientController)

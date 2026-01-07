@@ -7,6 +7,7 @@ const parcelSchema = new mongoose.Schema(
         sender_name: String,
         sender_phone: String,
         sender_address: String,
+        email: String,
 
         receiver_name: String,
         receiver_phone: String,

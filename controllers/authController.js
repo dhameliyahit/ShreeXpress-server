@@ -91,6 +91,43 @@ const getAllAdminController = async (req, res) => {
     res.json({ totalAdmin: admins.length, admins });
 };
 
+/* ================= DELETE USERS ================= */
+const deleteUserBySuperadmin = async (req, res) => {
+    try {
+        if (req.user.role !== "superadmin") {
+            return res.status(403).json({ message: "Access denied" });
+        }
+
+        const { id } = req.params;
+
+        if (req.user.id === id) {
+            return res.status(400).json({
+                message: "You cannot delete your own account",
+            });
+        }
+
+        const user = await User.findById(id);
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        await User.findByIdAndDelete(id);
+
+        res.json({
+            success: true,
+            message: `User (${user.role}) deleted successfully`,
+        });
+
+    } catch (error) {
+        console.error("Superadmin delete user error:", error);
+        res.status(500).json({
+            message: "Server error",
+            error: error.message,
+        });
+    }
+};
+
 /* ================= GET CLIENTS ================= */
 const getAllClientController = async (req, res) => {
     const clients = await User.find({ created_by: req.user.id });
@@ -128,9 +165,26 @@ const getNewSuperAdminController = async (req, res) => {
 
 /* ================= GET ALL USERS ================= */
 const getAllUsersController = async (req, res) => {
-    const filter = req.query.role ? { role: req.query.role } : {};
-    const users = await User.find(filter).sort({ createdAt: -1 });
-    res.json({ users });
+    try {
+        const filter =
+            req.query.role && req.query.role !== "all"
+                ? { role: req.query.role }
+                : {};
+
+        const users = await User.find(filter)
+            .populate({
+                path: "created_by",
+                select: "email role"
+            })
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({ users });
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to fetch users",
+            error: error.message
+        });
+    }
 };
 
 /* ================= UPDATE USER ROLE ================= */
@@ -309,6 +363,7 @@ module.exports = {
     newAdminController,
     newClientController,
     getAllAdminController,
+    deleteUserBySuperadmin,
     getAllClientController,
     deleteClientController,
     getNewSuperAdminController,
