@@ -478,7 +478,7 @@ const AnalyticsParcel = async (req, res) => {
 
         const data = [];
 
-        for (let i = 0; i <= 30; i++) {
+        for (let i = 1; i <= 30; i++) {
             const day = new Date(startDate);
             day.setDate(startDate.getDate() + i);
 
