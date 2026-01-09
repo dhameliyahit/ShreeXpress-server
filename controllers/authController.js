@@ -2,8 +2,9 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { validationResult } = require("express-validator");
 const nodemailer = require("nodemailer");
-
 const User = require("../models/User");
+const Branch = require("../models/Branch");
+const Parcel = require("../models/Parcel");
 const OtpLog = require("../models/OtpLog");
 const BlockedEmail = require("../models/BlockedEmail");
 
@@ -100,7 +101,7 @@ const deleteUserBySuperadmin = async (req, res) => {
 
         const { id } = req.params;
 
-        if (req.user.id === id) {
+        if (req.user.id.toString() === id.toString()) {
             return res.status(400).json({
                 message: "You cannot delete your own account",
             });
@@ -112,11 +113,27 @@ const deleteUserBySuperadmin = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
+        if (user.role === "admin") {
+            const branches = await Branch.find({ created_by: id });
+
+            for (const branch of branches) {
+                const hasParcel = await Parcel.findOne({ branch: branch._id });
+
+                if (hasParcel) {
+                    return res.status(400).json({
+                        message: `Cannot delete admin. Branch "${branch.branch_name}" has active parcels.`,
+                    });
+                }
+            }
+
+            await Branch.deleteMany({ created_by: id });
+        }
+
         await User.findByIdAndDelete(id);
 
         res.json({
             success: true,
-            message: `User (${user.role}) deleted successfully`,
+            message: `User (${user.role}) and related data deleted successfully`,
         });
 
     } catch (error) {
