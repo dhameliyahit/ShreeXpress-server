@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { login, newAdminController, newClientController, getAllAdminController, getAllClientController, getNewSuperAdminController, getAllUsersController, forgotPassword, verifyOtp, resetPassword } = require('../controllers/authController');
+const { login, newAdminController, newClientController, getAllAdminController, deleteUserBySuperadmin, getAllClientController, deleteClientController, getNewSuperAdminController, getAllUsersController, forgotPassword, verifyOtp, resetPassword, updateUserRoleController } = require('../controllers/authController');
 const { protect, superadmin, admin } = require('../middleware/authMiddleware');
-const { body, validationResult } = require("express-validator");
+const { body } = require("express-validator");
 
 
 router.post('/login', login);
@@ -14,37 +14,30 @@ router.post("/new/admin", protect, superadmin, [
     body("role").notEmpty().withMessage("Role must be define")
 ], newAdminController);
 
-router.post("/new/client", protect)
-
-router.get('/role-info', protect, (req, res) => {
-    res.json({
-        message: 'Role info fetched successfully',
-        user: {
-            id: req.user.id,
-            name: req.user.name,
-            role: req.user.role
-        }
-    });
-});
-
+// router.post("/new/client", protect)
 
 router.post("/new/client", protect, admin, newClientController);
 
 //super admin get all admin
 router.get("/all/admin", protect, superadmin, getAllAdminController)
 
+router.delete("/users/:id", protect, superadmin, deleteUserBySuperadmin);
+
 //admin got all client what creby him
 router.get("/all/client", protect, admin, getAllClientController)
 
+router.delete("/delete/client/:clientId", protect, admin, deleteClientController);
 
-
-router.get("/all/users",protect, superadmin, getAllUsersController);
-//update-delete pachhi
+router.get("/all/users", protect, superadmin, getAllUsersController);
 
 router.post("/new/superadmin", getNewSuperAdminController);
 
+router.put("/user/:id/role", protect, superadmin, updateUserRoleController);
+
 router.post('/forgot-password', forgotPassword);
+
 router.post('/verify-otp', verifyOtp);
+
 router.post('/reset-password', resetPassword);
 
 

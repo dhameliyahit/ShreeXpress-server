@@ -1,10 +1,14 @@
 // connectDB.js
-const { Pool } = require("pg");
+const mongoose = require("mongoose");
 require("dotenv").config();
 
-const dns = require('dns');
-dns.setDefaultResultOrder('ipv4first');
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      autoIndex: true
+    });
 
+<<<<<<< HEAD
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -19,6 +23,13 @@ const pool = new Pool({
   //   rejectUnauthorized: false
   // }
 });
+=======
+    console.log("MongoDB Connected");
+  } catch (error) {
+    console.error("MongoDB Connection Failed:", error.message);
+    process.exit(1);
+  }
+};
+>>>>>>> 7a7c53eb0621c8ccf6a65028b9c5f4f6abf0a903
 
-
-module.exports = pool;
+module.exports = connectDB;
